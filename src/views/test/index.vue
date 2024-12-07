@@ -1,6 +1,6 @@
 <template>
   <div class="article-detail">
-    <!-- 如果文章数据存在则渲染 -->
+    <!-- 文章内容 -->
     <div v-if="article && article.userName">
       <h1 class="title">{{ article.title }}</h1>
       <div class="meta">
@@ -11,115 +11,166 @@
       <div class="content">
         <p>{{ article.content }}</p>
       </div>
-      <!-- 点赞 -->
       <div class="good" @click="likeArticle">
-        <icon-heart-fill :style="{ fontSize: '20px', color: isLiked ? '#ff3366' : '#ccc' }" />
+        <icon-heart-fill :style="{ fontSize: '20px',color: isLiked ? '#ff3366' : '#ccc' }" />
         {{ article.good }}
       </div>
     </div>
-
-    <!-- 如果文章数据为空则提示 -->
     <div v-else>
-      <p>
-        这里没东西...............................................................................................................................................  
-      </p>
+      <p>这里没东西...............................................................................................................................................</p>
     </div>
-
+  </div>
     <!-- 评论区 -->
     <div class="comment-section">
-      <h3>评论区</h3>
+      <h3 class="comment-title">评论区</h3>
+
       <!-- 评论列表 -->
       <div class="comment-list">
         <div v-for="(comment, index) in comments" :key="comment.id" class="comment-item">
-          <div class="comment-author">{{ comment.userName }}</div>
+          <div class="comment-header">
+            <span class="comment-author">用户-{{ comment.userName }}</span>
+            <span class="comment-time">{{ comment.time }}</span>
+          </div>
           <div class="comment-content">{{ comment.content }}</div>
+
+          <!-- 只有根评论才显示回复按钮 -->
+          <div v-if="!comment.parentId" class="reply-button">
+            <el-button @click="toggleReplyBox(comment.id)" type="text">回复</el-button>
+          </div>
+
+          <!-- 回复框 -->
+          <div v-if="showReplyBox[comment.id]" class="reply-form">
+            <el-input
+              v-model="newReply[comment.id]"
+              placeholder="写下你的回复..."
+              type="textarea"
+              :rows="2"
+            />
+            <el-button
+              type="primary"
+              @click="submitReply(comment.id)"
+              style="margin-top: 10px; width: 100%;"
+            >
+              提交回复
+            </el-button>
+          </div>
+
+          <!-- 展示该评论的所有回复 -->
+          <div v-if="comment.replies && comment.replies.length" class="replies">
+            <div v-for="(reply, idx) in comment.replies" :key="reply.id" class="reply-item">
+              <div class="reply-author">用户-{{ reply.userName }}:</div>
+              <div class="reply-content">{{ reply.content }}</div>
+            </div>
+          </div>
         </div>
       </div>
 
-      <!-- 评论表单 -->
+      <!-- 根评论的评论输入框 -->
       <div class="comment-form">
         <el-input
           v-model="newComment"
           placeholder="写下你的评论..."
           type="textarea"
-          :rows=3
+          :rows="3"
         />
-        <el-button type="primary" @click="submitComment" style="margin-top: 10px;">提交评论</el-button>
+        <el-button type="primary" @click="submitComment" style="margin-top: 10px; width: 100%;">提交评论</el-button>
       </div>
     </div>
-  </div>
+
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue';
-import { useBlogStore } from '@/stores/blog';
-import { reqLikeBlog, reqBlogComment,reqCommnentBlog } from '@/api/blog';
 
-const blogStore = useBlogStore();
-// 模拟文章数据
 const article = ref({
-  id: '',
-  title: '',
-  created: '',
-  userName: '',
-  content: '',
-  good: 0,
-  category: {
-    createTime: '',
-    updateTime: ''
-  }
+  title: "文章标题",
+  userName: "作者名",
+  category: { createTime: "2024-01-01", updateTime: "2024-01-02" },
+  content: "这是一篇文章的内容。",
+  good: 10
 });
 
-// 点赞状态，是否已经点赞
-const isLiked = ref(false);
-// 模拟评论数据
-const comments = ref([
-  { userName: '小明', content: '这篇文章真不错！' },
-  { userName: '小红', content: '感觉很有启发，谢谢分享！' },
-]);
-// 获取评论
-const getComments=async()=>{
-  const res=await reqBlogComment(1)
-  console.log('==========');
-  
-  console.log(res);
-  comments.value=res.data
-}
-// 新评论内容
-const newComment = ref('');
+let isLiked = ref(false);
 
-// 点赞功能
-const likeArticle = async () => {
-  if (isLiked.value) return; // 如果已经点赞，则不执行任何操作
-  const res = await reqLikeBlog(article.value.id);
-  console.log(res);
-  if (res.code == 0) {
-    article.value.good++;
-    isLiked.value = true; // 标记为已点赞
+// 评论数据，包括回复
+const comments = ref([
+  {
+    id: 1,
+    userName: "用户A",
+    content: "这是一条根评论。",
+    time: "2024-01-01 12:00",
+    parentId: null, // 根评论没有parentId
+    replies: [
+      { id: 1, userName: "用户B", content: "这是对根评论的回复", parentId: 1 }
+    ]
+  },
+  {
+    id: 2,
+    userName: "用户C",
+    content: "这是另一条根评论。",
+    time: "2024-01-01 12:30",
+    parentId: null, // 根评论没有parentId
+    replies: []
   }
+]);
+
+// 新评论内容
+const newComment = ref("");
+
+// 新回复内容，存储每个评论的回复
+const newReply = ref({});
+
+// 控制回复框显示/隐藏
+const showReplyBox = ref({});
+
+// 切换回复框显示
+const toggleReplyBox = (commentId) => {
+  showReplyBox.value[commentId] = !showReplyBox.value[commentId];
 };
 
 // 提交评论
-const submitComment = async() => {
-  if (!newComment.value.trim()) {
-    return; // 如果评论为空，则不提交
-  }
+const submitComment = () => {
+  if (!newComment.value.trim()) return; // 如果评论为空，则不提交
 
- const res=await reqCommnentBlog(1,newComment.value)
- console.log(res);
- if(res.code==0){
-  ElMessage({
-        type: 'success',
-        message: '评论成功'
-    });
- }
-  newComment.value = ''; // 提交后清空评论内容
+  const newCommentObj = {
+    id: comments.value.length + 1,
+    userName: "当前用户",
+    content: newComment.value,
+    time: new Date().toLocaleString(),
+    parentId: null,
+    replies: []
+  };
+
+  comments.value.push(newCommentObj);
+  newComment.value = ""; // 提交后清空评论内容
 };
 
+// 提交回复
+const submitReply = (commentId) => {
+  if (!newReply[commentId]?.trim()) return; // 如果回复为空，则不提交
+
+  const comment = comments.value.find((c) => c.id === commentId);
+  const newReplyObj = {
+    id: comment.replies.length + 1,
+    userName: "当前用户",
+    content: newReply[commentId],
+    parentId: commentId
+  };
+
+  comment.replies.push(newReplyObj);
+  newReply[commentId] = ""; // 提交后清空回复内容
+};
+
+// 点赞
+const likeArticle = () => {
+  if (isLiked.value) return; // 如果已经点赞，则不执行任何操作
+  article.value.good++;
+  isLiked.value = true; // 标记为已点赞
+};
+
+// 页面加载时获取文章
 onMounted(() => {
-  // 假设我们从 store 中获取文章数据
-  article.value = blogStore.getArticle();
-  getComments()
+  // 如果有需要获取的内容，可以在此调用API或进行其他初始化
 });
 </script>
 
@@ -147,18 +198,6 @@ onMounted(() => {
   margin-bottom: 20px;
 }
 
-.author {
-  margin-right: 10px;
-}
-
-.created {
-  margin-left: 10px;
-}
-
-.update {
-  margin-left: auto;
-}
-
 .content {
   font-size: 16px;
   line-height: 1.6;
@@ -172,14 +211,21 @@ onMounted(() => {
   cursor: pointer;
 }
 
-.comment-section {
-  margin-top: 40px;
+.comment-card {
+  margin-top: 20px;
 }
 
-.comment-section h3 {
+.comment-section {
+  padding: 20px;
+  background: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.comment-title {
   font-size: 20px;
   font-weight: bold;
-  margin-bottom: 20px;
+  margin-bottom: 10px;
 }
 
 .comment-list {
@@ -187,13 +233,26 @@ onMounted(() => {
 }
 
 .comment-item {
-  padding: 10px;
-  border-bottom: 1px solid #eee;
+  padding: 15px;
+  border-radius: 8px;
+  background: #f7f7f7;
+  margin-bottom: 10px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.comment-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
 }
 
 .comment-author {
   font-weight: bold;
-  margin-bottom: 5px;
+}
+
+.comment-time {
+  font-size: 12px;
+  color: #aaa;
 }
 
 .comment-content {
@@ -201,16 +260,31 @@ onMounted(() => {
   color: #555;
 }
 
+.reply-button {
+  margin-top: 10px;
+}
+
+.reply-form {
+  margin-top: 10px;
+}
+
+.replies {
+  margin-top: 15px;
+  padding-left: 20px;
+}
+
+.reply-item {
+  margin-top: 10px;
+  padding: 10px;
+  background-color: #f1f1f1;
+  border-radius: 6px;
+}
+
+.reply-author {
+  font-weight: bold;
+}
+
 .comment-form {
-  display: flex;
-  flex-direction: column;
-}
-
-.comment-form .el-input {
-  margin-bottom: 10px;
-}
-
-.comment-form .el-button {
-  align-self: flex-start;
+  margin-top: 20px;
 }
 </style>

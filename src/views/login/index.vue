@@ -65,11 +65,11 @@ const form2 = ref()
 const rules = {
     username: [
         { required: true, message: '请输入你的账号', trigger: 'blur' },
-        { min: 4, max: 6, message: '请输入4-6个字符', trigger: 'blur' }
+        { min: 3, max: 10, message: '请输入3-10个字符', trigger: 'blur' }
     ],
     password: [
         { required: true, message: '请输入你的用户密码', trigger: 'blur' },
-        { min: 4, max: 6, message: '密码为4-6个字符', trigger: 'blur' }
+        { min: 3, max: 10, message: '密码为3-10个字符', trigger: 'blur' }
     ]
 }
 // 注册

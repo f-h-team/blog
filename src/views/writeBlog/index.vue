@@ -16,10 +16,10 @@
     
     <!-- 分类选择 -->
     <el-radio-group v-model="categoryId">
-      <el-radio value="1" size="large">前端技术</el-radio>
-      <el-radio value="2" size="large">后端技术</el-radio>
-      <el-radio value="3" size="large">教程</el-radio>
-      <el-radio value="4" size="large">其它(想写啥就写啥)</el-radio>
+      <el-radio value="3" size="large">前端技术</el-radio>
+      <el-radio value="4" size="large">后端技术</el-radio>
+      <el-radio value="5" size="large">教程</el-radio>
+      <el-radio value="6" size="large">其它(想写啥就写啥)</el-radio>
     </el-radio-group>
     
     <!-- 按钮区域 -->

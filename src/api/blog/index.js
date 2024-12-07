@@ -6,6 +6,7 @@ const API={
     reqLikeBlog_API:'/blog/great/',
     reqBlogComment_API:'comments/show?blogId=',
     reqCommnentBlog_API:'/comments/add?',
+    reqBlog_API:'/blog/getBlog?'
 }
 export const reqAddBlog=(data)=>{
     return request.post(API.reqAddBlog_API,data)
@@ -22,6 +23,13 @@ export const reqLikeBlog=(blogId)=>{
 export const reqBlogComment=(blogId)=>{
     return request.get(API.reqBlogComment_API+`${blogId}`)
 }
-export const reqCommnentBlog=(blogId,content,parentId=null)=>{
+// 进行评论
+export const reqCommnentBlog=(blogId,content)=>{
+    return request.post(API.reqCommnentBlog_API+`blogId=${blogId}&content=${content}`)
+}
+export const reqReplyCommnent=(blogId,content,parentId)=>{
     return request.post(API.reqCommnentBlog_API+`blogId=${blogId}&content=${content}&parentId=${parentId}`)
+}
+export const reqBlog=(blogId)=>{
+    return request.get(API.reqBlog_API+`blogId=${blogId}`)
 }

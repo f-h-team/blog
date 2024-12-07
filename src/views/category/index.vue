@@ -1,14 +1,30 @@
 <template>
     <div class="container">
-        <el-card style="width: 900px; margin-top: 30px;"   >
+        <el-card style="width: 900px; margin-top: 30px;" >
             <!-- 标签页 -->
             <el-tabs v-model="activeTab" type="card"  @tab-click="handleClick">
                 <el-tab-pane label="前端技术" name="3" >
-                    <div class="chapter">
+                    <div class="content">
                         <a-card v-for="(article, index) in articles" :key="article.id" class="card-demo"
-                            :title="article.title" hoverable @click="viewDetail(article)">
+                            :title="article.title" hoverable  @click="viewDetail(article)">
+                            <template #extra>
+                                more
+                                <!-- <el-popover :visible="visibleArticleId === article.id" placement="top" :width="160">
+                                    <p>确定删除?{{ article.content }}</p>
+                                    <div style="text-align: right; margin: 0">
+                                        <el-button size="small" type="danger"
+                                            @click="removeArticle(article.id)">确定</el-button>
+                                        <el-button size="small" @click="visibleArticleId = null">
+                                            取消
+                                        </el-button>
+                                    </div>
+                                    <template #reference>
+                                        <el-button @click.stop="visibleArticleId = article.id">x</el-button>
+                                    </template>
+                                </el-popover> -->
+                            </template>
                             <!-- 文章内容 -->
-                            <p class="summary">{{ article.content }}</p>
+                            <p class="summary" >{{ article.content }}</p>
                         </a-card>
                     </div>
                 </el-tab-pane>
@@ -17,7 +33,23 @@
                     <div class="content">
                         <!-- <h3>后端技术</h3> -->
                         <a-card v-for="(article, index) in articles" :key="article.id" class="card-demo"
-                            :title="article.title" hoverable @click="viewDetail(article)">
+                            :title="article.title" hoverable  @click="viewDetail(article)">
+                            <template #extra>
+                                more
+                                <!-- <el-popover :visible="visibleArticleId === article.id" placement="top" :width="160">
+                                    <p>确定删除?{{ article.content }}</p>
+                                    <div style="text-align: right; margin: 0">
+                                        <el-button size="small" type="danger"
+                                            @click="removeArticle(article.id)">确定</el-button>
+                                        <el-button size="small" @click="visibleArticleId = null">
+                                            取消
+                                        </el-button>
+                                    </div>
+                                    <template #reference>
+                                        <el-button @click.stop="visibleArticleId = article.id">x</el-button>
+                                    </template>
+                                </el-popover> -->
+                            </template>
                             <!-- 文章内容 -->
                             <p class="summary">{{ article.content }}</p>
                         </a-card>
@@ -29,8 +61,24 @@
                         <!-- <h3>教程</h3> -->
                         <a-card v-for="(article, index) in articles" :key="article.id" class="card-demo"
                             :title="article.title" hoverable @click="viewDetail(article)">
+                            <template #extra>
+                                more
+                                <!-- <el-popover :visible="visibleArticleId === article.id" placement="top" :width="160">
+                                    <p>确定删除?{{ article.content }}</p>
+                                    <div style="text-align: right; margin: 0">
+                                        <el-button size="small" type="danger"
+                                            @click="removeArticle(article.id)">确定</el-button>
+                                        <el-button size="small" @click="visibleArticleId = null">
+                                            取消
+                                        </el-button>
+                                    </div>
+                                    <template #reference>
+                                        <el-button @click.stop="visibleArticleId = article.id">x</el-button>
+                                    </template>
+                                </el-popover> -->
+                            </template>
                             <!-- 文章内容 -->
-                            <p class="summary">{{ article.content }}</p>
+                            <p class="summary" >{{ article.content }}</p>
                         </a-card>
                     </div>
                 </el-tab-pane>
@@ -39,7 +87,23 @@
                     <div class="content">
                         <!-- <h3>其它</h3> -->
                         <a-card v-for="(article, index) in articles" :key="index" class="card-demo"
-                            :title="article.title" hoverable @click="viewDetail(article)">
+                            :title="article.title" hoverable  @click="viewDetail(article)">
+                            <template #extra>
+                                more
+                                <!-- <el-popover :visible="visibleArticleId === article.id" placement="top" :width="160" :append-to-body="false">
+                                    <p>确定删除?{{ article.content }}</p>
+                                    <div style="text-align: right; margin: 0">
+                                        <el-button size="small" type="danger"
+                                            @click="removeArticle(article.id)">确定</el-button>
+                                        <el-button size="small" @click="visibleArticleId = null">
+                                            取消
+                                        </el-button>
+                                    </div>
+                                    <template #reference>
+                                        <el-button @click.stop="visibleArticleId = article.id">x</el-button>
+                                    </template>
+                                </el-popover> -->
+                            </template>
                             <!-- 文章内容 -->
                             <p class="summary">{{ article.content }}</p>
                         </a-card>
@@ -69,30 +133,15 @@ import { ElCard, ElTabs, ElTabPane } from 'element-plus';
 import { reqCategoryBlog } from '@/api/category';
 import { useBlogStore } from '@/stores/blog';
 import { useRouter } from 'vue-router';
+import { reqDeleteBlog } from '@/api/user';
 const activeTab = ref('3');  // 初始选中“前端技术”标签
 const total=ref(1)
 const pageNo=ref(1)
 const pageSize=ref(3)
 const blogStore=useBlogStore()
 const router=useRouter()
-const articles = ref([
-    {
-        title: 'AJAX原理是什么?如何实现?',
-        content: `
-      AJAX全称(Async Javascript and XML)，即异步的JavaScript 和XML...
-      它是一种创建交互式网页应用的技术，可以在不重新加载网页的情况下与服务器交换数据。
-      使用XMLHttpRequest对象向服务器发送异步请求，从服务器获取数据后更新页面。
-      实现步骤包括：创建XMLHttpRequest对象、与服务器建立连接、发送请求、监听状态变化，并更新页面。
-    `,
-    },
-    {
-        title: 'Vue的响应式原理',
-        content: `
-      Vue使用了Object.defineProperty和Proxy来实现响应式。
-      当数据变化时，Vue会监听到getter和setter的调用并自动更新DOM。
-    `,
-    },
-]);
+const articles = ref([]);
+const visibleArticleId = ref(null); // 存储当前弹窗的文章 ID// 个人博客展示
 const categoryParmas=reactive({
     current:'1',
     size:'3',
@@ -125,8 +174,28 @@ const handleCurrentChange=()=>{
 }
 // 点击文章
 const viewDetail = (data) => {
-  blogStore.saveArticle(data)
-  router.push('/blogDetail')
+  router.push({
+    path:'/blogDetail',
+    query: { blogId: data?.id }
+  })
+}
+// 删除文章
+const removeArticle = async (blogId) => {
+    const res = await reqDeleteBlog(blogId)
+    console.log(res);
+    if (res.code == 0) {
+        ElMessage({
+            type: 'success',
+            message: '删除成功'
+        })
+        getAllBlog()
+    } else {
+        ElMessage({
+            type: 'error',
+            message: '删除失败'
+        })
+    }
+
 }
 onMounted(async()=>{
     const res=await reqCategoryBlog(categoryParmas)

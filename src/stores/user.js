@@ -25,6 +25,8 @@ export const useUserStore = defineStore('user', () => {
             message: '登录成功'
         })
         // 存储数据
+        console.log(res.data);
+        
         userInfo.token = res.data
         localStorage.setItem('TOKEN',res.data)
         console.log('点击登录',userInfo.token );

@@ -62,7 +62,7 @@
                 <el-tab-pane label="我的博客" name="2">
                     <div class="chapter">
                         <a-card v-for="(article) in articles" :key="article.id" class="card-demo" :title="article.title"
-                            hoverable>
+                            hoverable  @click="viewDetail(article)">
                             <!-- 删除-->
                             <template #extra>
                                 <el-popover :visible="visibleArticleId === article.id" placement="top" :width="160">
@@ -75,23 +75,12 @@
                                         </el-button>
                                     </div>
                                     <template #reference>
-                                        <el-button @click="visibleArticleId = article.id">x</el-button>
+                                        <el-button @click.stop="visibleArticleId = article.id">x</el-button>
                                     </template>
                                 </el-popover>
-                                <!-- <a-popover title="确定删除?" trigger="click">
-                                    <template slot="content">
-                                        <a-button type="danger" @click="removeArticle(article.id)">
-                                            确定
-                                        </a-button>
-                                        <a-button>取消</a-button>
-                                    </template>
-                                    <a-button>
-                                        <span class="close-icon" >×</span>
-                                    </a-button>
-                                </a-popover> -->
                             </template>
                             <!-- 文章内容 -->
-                            <p class="summary" @click="viewDetail(article)">{{ article.content }}</p>
+                            <p class="summary">{{ article.content }}</p>
                         </a-card>
                         <el-pagination v-model:current-page="pageNo" v-model:page-size="pageSize"
                             :page-sizes="[3, 5, 7,]" :background="true"
@@ -142,7 +131,7 @@ const articles = ref([
 
 // 上传头像
 const headers = {
-    Authorization: "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJuYW1lIjoiYWJjZGUiLCJhdXRob3JpdGllcyI6InVzZXIifQ.BsmjOV4reasuK8OBRbm_OA9FxlmUtFznvn07rrHQHhM", // 如果需要认证，添加 token
+    Authorization: userStore.userInfo.token||'', // 如果需要认证，添加 token
 };
 
 const uploadData = ref({
@@ -217,8 +206,10 @@ watch(() => activeTab.value, (newValue) => {
 })
 // 点击文章
 const viewDetail = (data) => {
-    blogStore.saveArticle(data)
-    router.push('/blogDetail')
+    router.push({
+    path:'/blogDetail',
+    query: { blogId: data.id }
+  })
 }
 
 // 删除文章

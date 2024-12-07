@@ -26,37 +26,73 @@
     </div>
       
   </div>
-  <el-card>
-      <!-- 评论区 -->
-      <div class="comment-section">
-      <h3>评论区</h3>
+
+    <!-- 评论区 -->
+    <div class="comment-section">
+      <h3 class="comment-title">评论区</h3>
+
       <!-- 评论列表 -->
       <div class="comment-list">
         <div v-for="(comment, index) in comments" :key="comment.id" class="comment-item">
-          <div class="comment-author">来自：{{ comment.userName }}</div>
+          <div class="comment-header">
+            <span class="comment-author">用户-{{ comment.userName }}</span>
+            <span class="comment-time">{{ comment.createTime }}</span>
+          </div>
           <div class="comment-content">{{ comment.content }}</div>
+
+          <!-- 只有根评论才显示回复按钮 -->
+          <div v-if="!comment.parentId" class="reply-button">
+            <el-button @click="toggleReplyBox(comment.id)" type="text">回复</el-button>
+          </div>
+
+          <!-- 回复框 -->
+          <div v-if="showReplyBox[comment.id]" class="reply-form">
+            <el-input
+              v-model="newReply[comment.id]"
+              placeholder="写下你的回复..."
+              type="textarea"
+              :rows="2"
+            />
+            <el-button
+              type="primary"
+              @click="submitReply(comment.id)"
+              style="margin-top: 10px; width: 100%;"
+            >
+              提交回复
+            </el-button>
+          </div>
+
+          <!-- 展示该评论的所有回复 -->
+          <div v-if="comment.child && comment.child.length" class="replies">
+            <div v-for="(reply, idx) in comment.child" :key="idx" class="reply-item">
+              <div class="reply-author">用户-{{ reply.userName }}:</div>
+              <div class="reply-content">{{ reply.content }}</div>
+            </div>
+          </div>
         </div>
       </div>
 
-      <!-- 评论表单 -->
+      <!-- 根评论的评论输入框 -->
       <div class="comment-form">
         <el-input
           v-model="newComment"
           placeholder="写下你的评论..."
           type="textarea"
-          :rows=3
+          :rows="3"
         />
-        <el-button type="primary" @click="submitComment" style="margin-top: 10px;">提交评论</el-button>
+        <el-button type="primary" @click="submitComment" style="margin-top: 10px; width: 100%;">提交评论</el-button>
       </div>
     </div>
-  </el-card>
+
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue';
 import { useBlogStore } from '@/stores/blog';
-import { reqLikeBlog, reqBlogComment,reqCommnentBlog } from '@/api/blog';
+import { reqLikeBlog, reqBlogComment,reqCommnentBlog,reqBlog,reqReplyCommnent } from '@/api/blog';
+import { useRoute } from 'vue-router';
 const blogStore = useBlogStore()
+const route=useRoute()
 // 模拟文章数据
 const article = ref({
   id: '',
@@ -70,12 +106,48 @@ let isLiked=ref(false)
 const comments = ref([]);
 // 获取评论
 const getComments=async()=>{
-  const res=await reqBlogComment(article.value.id)
+  const res=await reqBlogComment(route.query.blogId)
   console.log(res);
   comments.value=res.data
 }
 // 新评论内容
 const newComment = ref('');
+// 新回复内容，存储每个评论的回复
+const newReply = ref({});
+
+// 控制回复框显示/隐藏
+const showReplyBox = ref({});
+// 点击回复
+const toggleReplyBox=(commentId)=>{
+  showReplyBox.value[commentId] = !showReplyBox.value[commentId];
+}
+// 提交回复
+const submitReply=async(commentId)=>{
+  if (!newReply.value[commentId].trim()) {
+    return; // 如果评论为空，则不提交
+  }
+  const content=newReply.value[commentId]
+  const res=await reqReplyCommnent(route.query.blogId,content,commentId)
+  if(res.code==0){
+  ElMessage({
+        type: 'success',
+        message: '回复成功'
+    });
+    getComments()
+ }
+ showReplyBox.value[commentId] = !showReplyBox.value[commentId];
+ newReply.value[commentId]=''
+}
+// 获取文章
+const getBlog=async()=>{
+  const res=await reqBlog(route.query.blogId  )
+  console.log(res);
+  
+  if(res.code==0){
+    article.value=res.data
+  }
+  
+}
 // 提交评论
 const submitComment = async() => {
   if (!newComment.value.trim()) {
@@ -89,6 +161,7 @@ const submitComment = async() => {
         type: 'success',
         message: '评论成功'
     });
+    getComments()
  }
   newComment.value = ''; // 提交后清空评论内容
 };
@@ -107,8 +180,8 @@ const likeArticle=async()=>{
 }
 
 // 页面加载时获取文章
-onMounted(() => {
-  article.value = blogStore.getArticle()
+onMounted(() => {  
+  getBlog()
   getComments()
 });
 </script>
@@ -128,6 +201,7 @@ onMounted(() => {
   font-weight: bold;
   margin-bottom: 10px;
 }
+
 
 .meta {
   display: flex;
@@ -159,17 +233,29 @@ onMounted(() => {
   /* 保持换行 */
 }
 
-/* 点赞 */
+
 .good {
   display: flex;
   width: 30px;
   align-items: center;
-  cursor: pointer; /* 鼠标悬停在整个 div 时变为手型 */
+  cursor: pointer;
 }
-.comment-section h3 {
+
+.comment-card {
+  margin-top: 20px;
+}
+
+.comment-section {
+  padding: 20px;
+  background: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.comment-title {
   font-size: 20px;
   font-weight: bold;
-  margin: 0px;
+  margin-bottom: 10px;
 }
 
 .comment-list {
@@ -177,13 +263,26 @@ onMounted(() => {
 }
 
 .comment-item {
-  padding: 10px;
-  border-bottom: 1px solid #eee;
+  padding: 15px;
+  border-radius: 8px;
+  background: #f7f7f7;
+  margin-bottom: 10px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.comment-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
 }
 
 .comment-author {
   font-weight: bold;
-  margin-bottom: 5px;
+}
+
+.comment-time {
+  font-size: 12px;
+  color: #aaa;
 }
 
 .comment-content {
@@ -191,16 +290,31 @@ onMounted(() => {
   color: #555;
 }
 
+.reply-button {
+  margin-top: 10px;
+}
+
+.reply-form {
+  margin-top: 10px;
+}
+
+.replies {
+  margin-top: 15px;
+  padding-left: 20px;
+}
+
+.reply-item {
+  margin-top: 10px;
+  padding: 10px;
+  background-color: #f1f1f1;
+  border-radius: 6px;
+}
+
+.reply-author {
+  font-weight: bold;
+}
+
 .comment-form {
-  display: flex;
-  flex-direction: column;
-}
-
-.comment-form .el-input {
-  margin-bottom: 10px;
-}
-
-.comment-form .el-button {
-  align-self: flex-start;
+  margin-top: 20px;
 }
 </style>
